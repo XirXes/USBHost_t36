@@ -38,14 +38,96 @@
 // The others are used after claim-hid code to know which one we have and to use it for 
 // doing other features.  
 JoystickController::product_vendor_mapping_t JoystickController::pid_vid_mapping[] = {
-	{ 0x045e, 0x02ea, XBOXONE, false },{ 0x045e, 0x02dd, XBOXONE, false },
-	{ 0x045e, 0x0719, XBOX360, false},
-	{ 0x054C, 0x0268, PS3, true}, 
-	{ 0x054C, 0x042F, PS3, true},	// PS3 Navigation controller
-	{ 0x054C, 0x03D5, PS3_MOTION, true},	// PS3 Motion controller
-	{ 0x054C, 0x05C4, PS4, true}, 	{0x054C, 0x09CC, PS4, true },
-	{ 0x046D, 0xC626, SpaceNav, true},  // 3d Connextion Space Navigator, 0x10008
-	{ 0x046D, 0xC628, SpaceNav, true}  // 3d Connextion Space Navigator, 0x10008
+	//Wired Xbox One Controllers
+	{ 0x045e, 0x02ea, XBOXONE, false },
+	{ 0x045e, 0x02dd, XBOXONE, false },
+
+	//Wireless Xbox 360 Receivers
+	{ 0x045e, 0x0719, XBOX360, false}, //Official USB receiver
+	{ 0x045e, 0x0291, XBOX360, false}, //Officual RF module
+	{ 0x045e, 0x02AA, XBOX360, false}, //Clone
+	{ 0x045e, 0x02A9, XBOX360, false}, //Clone
+
+	//Wired Xbox 360 Controllers
+	//Alot taken from https://github.com/xboxdrv/xboxdrv/blob/stable/src/xpad_device.cpp
+	{ 0x045E, 0x028E, XBOX360_WIRED, false},  //Microsoft X-Box 360 pad
+	{ 0x0738, 0x4716, XBOX360_WIRED, false},  //Mad Catz Wired Xbox 360 Controller
+	{ 0x0738, 0x4726, XBOX360_WIRED, false},  //Mad Catz Xbox 360 Controller
+	{ 0x0738, 0x4728, XBOX360_WIRED, false},  //Mad Catz Street Fighter IV FightPad
+	{ 0x0738, 0x4740, XBOX360_WIRED, false},  //Mad Catz Beat Pad
+	{ 0x0738, 0xB726, XBOX360_WIRED, false},  //Mad Catz Xbox controller - MW2
+	{ 0x0738, 0xF738, XBOX360_WIRED, false},  //Super SFIV FightStick TE S
+	{ 0x0738, 0x4718, XBOX360_WIRED, false},  //Mad Catz Street Fighter IV FightStick SE
+	{ 0x0738, 0x4738, XBOX360_WIRED, false},  //Mad Catz Wired Xbox 360 Controller (SFIV)
+	{ 0x0738, 0xBEEF, XBOX360_WIRED, false},  //Mad Catz JOYTECH NEO SE Advanced GamePad
+	{ 0x0F0D, 0x000A, XBOX360_WIRED, false},  //Hori Co. DOA4 FightStick
+	{ 0x0F0D, 0x000D, XBOX360_WIRED, false},  //Hori Fighting Stick EX2
+	{ 0x0F0D, 0x0016, XBOX360_WIRED, false},  //Hori Real Arcade Pro.EX
+	{ 0x056E, 0x2004, XBOX360_WIRED, false},  //Elecom JC-U3613M
+	{ 0x24C6, 0x5501, XBOX360_WIRED, false},  //Hori Real Arcade Pro VX-SA
+	{ 0x24C6, 0x5303, XBOX360_WIRED, false},  //Xbox Airflo wired controller
+	{ 0x24C6, 0x531A, XBOX360_WIRED, false},  //PowerA Pro Ex
+	{ 0x24C6, 0x5397, XBOX360_WIRED, false},  //FUS1ON Tournament Controller
+	{ 0x24C6, 0x5503, XBOX360_WIRED, false},  //Hori Fighting Edge
+	{ 0x24C6, 0x550D, XBOX360_WIRED, false},  //Hori GEM Xbox controller
+	{ 0x24C6, 0x5B03, XBOX360_WIRED, false},  //Thrustmaster Ferrari 458 Racing Wheel
+	{ 0x162E, 0xBEEF, XBOX360_WIRED, false},  //Joytech Neo-Se Take2
+	{ 0x044F, 0xB326, XBOX360_WIRED, false},  //Thrustmaster Gamepad GP XID
+	{ 0x046D, 0xC21D, XBOX360_WIRED, false},  //Logitech Gamepad F310
+	{ 0x046D, 0xC21E, XBOX360_WIRED, false},  //Logitech Gamepad F510
+	{ 0x046D, 0xC21F, XBOX360_WIRED, false},  //Logitech Gamepad F710
+	{ 0x046D, 0xC242, XBOX360_WIRED, false},  //Logitech Chillstream Controller
+	{ 0x0738, 0xCB03, XBOX360_WIRED, false},  //Saitek P3200 Rumble Pad - PC/Xbox 360
+	{ 0x0738, 0xCB02, XBOX360_WIRED, false},  //Saitek Cyborg Rumble Pad - PC/Xbox 360
+	{ 0x0E6F, 0x0201, XBOX360_WIRED, false},  //Pelican PL-3601 'TSZ' Wired Xbox 360 Controller
+	{ 0x0E6F, 0x0105, XBOX360_WIRED, false},  //HSM3 Xbox360 dancepad
+	{ 0x0E6F, 0x0113, XBOX360_WIRED, false},  //Afterglow AX.1 Gamepad for Xbox 360
+	{ 0x0E6F, 0x0413, XBOX360_WIRED, false},  //Afterglow AX.1 Gamepad for Xbox 360
+	{ 0x0E6F, 0x0213, XBOX360_WIRED, false},  //Afterglow Gamepad for Xbox 360
+	{ 0x0E6F, 0x0401, XBOX360_WIRED, false},  //Logic3 Controller
+	{ 0x0E6F, 0x0301, XBOX360_WIRED, false},  //Logic3 Controller
+	{ 0x12AB, 0x0301, XBOX360_WIRED, false},  //PDP AFTERGLOW AX.1
+	{ 0x146B, 0x0601, XBOX360_WIRED, false},  //BigBen Interactive XBOX 360 Controller
+	{ 0x1BAD, 0xF016, XBOX360_WIRED, false},  //Mad Catz Xbox 360 Controller
+	{ 0x1BAD, 0xF018, XBOX360_WIRED, false},  //Mad Catz Street Fighter IV SE Fighting Stick
+	{ 0x1BAD, 0xF021, XBOX360_WIRED, false},  //Mad Cats Ghost Recon FS GamePad
+	{ 0x1BAD, 0xF023, XBOX360_WIRED, false},  //MLG Pro Circuit Controller (Xbox)
+	{ 0x1BAD, 0xF028, XBOX360_WIRED, false},  //Street Fighter IV FightPad
+	{ 0x1BAD, 0xF02E, XBOX360_WIRED, false},  //Mad Catz Fightpad
+	{ 0x1BAD, 0xF038, XBOX360_WIRED, false},  //Street Fighter IV FightStick TE
+	{ 0x1BAD, 0xF03A, XBOX360_WIRED, false},  //Mad Catz SFxT Fightstick Pro
+	{ 0x1BAD, 0xF900, XBOX360_WIRED, false},  //Harmonix Xbox 360 Controller
+	{ 0x1BAD, 0xF901, XBOX360_WIRED, false},  //Gamestop Xbox 360 Controller
+	{ 0x1BAD, 0xF903, XBOX360_WIRED, false},  //Tron Xbox 360 controller
+	{ 0x1BAD, 0xFA01, XBOX360_WIRED, false},  //MadCatz GamePad
+	{ 0x15E4, 0x3F00, XBOX360_WIRED, false},  //Power A Mini Pro Elite
+	{ 0x15E4, 0x3F10, XBOX360_WIRED, false},  //Batarang Xbox 360 controller
+	{ 0x24C6, 0x5000, XBOX360_WIRED, false},  //Razer Atrox Arcade Stick
+	{ 0x1689, 0xFD00, XBOX360_WIRED, false},  //Razer Onza Tournament Edition
+	{ 0x1689, 0xFD01, XBOX360_WIRED, false},  //Razer Onza Classic Edition
+	{ 0x1532, 0x0037, XBOX360_WIRED, false},  //Razer Sabertooth
+	{ 0x12AB, 0x0004, XBOX360_WIRED, false},  //Honey Bee Xbox360 dancepad
+	{ 0x15E4, 0x3F0A, XBOX360_WIRED, false},  //Xbox Airflo wired controller
+	{ 0x24C6, 0x5300, XBOX360_WIRED, false},  //PowerA MINI PROEX Controller
+	{ 0x24C6, 0x5500, XBOX360_WIRED, false},  //Hori XBOX 360 EX 2 with Turbo
+	{ 0x24C6, 0x5506, XBOX360_WIRED, false},  //Hori SOULCALIBUR V Stick
+	{ 0x24C6, 0x5B02, XBOX360_WIRED, false},  //Thrustmaster Inc. GPX Controller
+	{ 0x24C6, 0x5D04, XBOX360_WIRED, false},  //Razer Sabertooth
+	{ 0x0E6F, 0x011F, XBOX360_WIRED, false},  //Rock Candy Gamepad Wired Controller
+	{ 0x0E6F, 0x021F, XBOX360_WIRED, false},  //Rock Candy Gamepad for Xbox 360
+
+	//PS3 Controllers
+	{ 0x054C, 0x0268, PS3, true},
+	{ 0x054C, 0x042F, PS3, true}, // PS3 Navigation controller
+	{ 0x054C, 0x03D5, PS3_MOTION, true}, // PS3 Motion controller
+
+	//PS4 Controllers
+	{ 0x054C, 0x05C4, PS4, true},
+	{ 0x054C, 0x09CC, PS4, true },
+
+	//Other
+	{ 0x046D, 0xC626, SpaceNav, true}, // 3d Connextion Space Navigator, 0x10008
+	{ 0x046D, 0xC628, SpaceNav, true}, // 3d Connextion Space Navigator, 0x10008
 };
 
 
@@ -169,6 +251,19 @@ bool JoystickController::setRumble(uint8_t lValue, uint8_t rValue, uint8_t timeo
 				println("XBox360 rumble transfer fail");
 			}
 			return true;
+		case XBOX360_WIRED:
+			txbuf_[0] = 0x00;
+			txbuf_[1] = 0x08;
+			txbuf_[2] = 0x00;
+			txbuf_[3] = lValue;
+			txbuf_[4] = rValue;
+			txbuf_[5] = 0x00;
+			txbuf_[6] = 0x00;
+			txbuf_[7] = 0x00;
+			if (!queue_Data_Transfer(txpipe_, txbuf_, 8, this)) {
+				println("XBox360 wired rumble transfer fail");
+			}
+			return true;
 	} 
 	return false;
 }
@@ -208,6 +303,14 @@ bool JoystickController::setLEDs(uint8_t lr, uint8_t lg, uint8_t lb)
 				txbuf_[11] = 0x00;
 				if (!queue_Data_Transfer(txpipe_, txbuf_, 12, this)) {
 					println("XBox360 set leds fail");
+				}
+				return true;
+			case XBOX360_WIRED:
+				txbuf_[0] = 0x01;
+				txbuf_[1] = 0x03;
+				txbuf_[2] = lb;
+				if (!queue_Data_Transfer(txpipe_, txbuf_, 3, this)) {
+					println("XBox360 wired set leds fail");
 				}
 				return true;
 			case XBOXONE:
@@ -509,6 +612,7 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 	// Some common stuff for both XBoxs
 	uint32_t count_end_points = descriptors[4];
 	if (count_end_points < 2) return false;
+	if (jtype == XBOX360_WIRED && (descriptors[6] != 0x5D || descriptors[7] != 0x01)) return false;
 	if (descriptors[5] != 0xff) return false; // bInterfaceClass, 3 = HID
 	rx_ep_ = 0;
 	uint32_t txep = 0;
@@ -520,7 +624,9 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 	if (descriptors[descriptor_index+1] == 0x22)  {
 		if (descriptors[descriptor_index] != 0x14) return false; // only support specific versions...
 		descriptor_index += descriptors[descriptor_index]; // XBox360w ignore this unknown setup...
-	}	
+	} else if (descriptors[descriptor_index+1] == 0x21)  {
+		descriptor_index += descriptors[descriptor_index]; // XBox360 wired skip this unknown setup...
+	}
 	while (count_end_points-- && ((rx_ep_ == 0) || txep == 0)) {
 		if (descriptors[descriptor_index] != 7) return false; // length 7
 		if (descriptors[descriptor_index+1] != 5) return false; // ep desc
@@ -557,16 +663,19 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 	queue_Data_Transfer(rxpipe_, rxbuf_, rx_size_, this);
 
 	txpipe_->callback_function = tx_callback;
-
+	joystickType_ = jtype;
 	if (jtype == XBOXONE) {
 		queue_Data_Transfer(txpipe_, xboxone_start_input, sizeof(xboxone_start_input), this);
 		connected_ = true;		// remember that hardware is actually connected...
 	} else if (jtype == XBOX360) {
 		queue_Data_Transfer(txpipe_, xbox360w_inquire_present, sizeof(xbox360w_inquire_present), this);
 		connected_ = 0;		// remember that hardware is actually connected...
+	} else if (jtype == XBOX360_WIRED) {
+		connected_ = true;
+		setLEDs(0);
+		setLEDs(2); //FIXME Hardcoded to 1st led quadrant
 	}
 	memset(axis, 0, sizeof(axis));	// clear out any data. 
-	joystickType_ = jtype;		// remember we are an XBox One. 
 	DBGPrintf("   JoystickController::claim joystickType_ %d\n", joystickType_);
 	return true;
 }
@@ -635,6 +744,17 @@ typedef struct {
 	int16_t	axis[4];
 } xbox360data_t;
 
+typedef struct {
+	uint8_t type;
+	uint8_t length;
+	//starting from the LSB: dup,ddown,dleft,dright,start,back,ls,rs,
+	//                       lb,rb,xbox,sync,a,b,x,y.
+	uint16_t buttons;
+	uint8_t lt;
+	uint8_t rt;
+	int16_t	axis[4]; //lx, ly, rx, ry
+} xbox360wireddata_t;
+
 static const uint8_t xbox_axis_order_mapping[] = {3, 4, 0, 1, 2, 5};
 
 void JoystickController::rx_data(const Transfer_t *transfer)
@@ -698,6 +818,51 @@ void JoystickController::rx_data(const Transfer_t *transfer)
 	        	anychange = true;
 	        }
 			axis_mask_ = 0x3f;	
+			axis_changed_mask_ = 0;	// assume none for now
+
+			for (uint8_t i = 0; i < 4; i++) {
+				if (axis[i] != xb360d->axis[i]) {
+					axis[i] = xb360d->axis[i];
+					axis_changed_mask_ |= (1 << i);
+					anychange = true;
+				}
+			}
+			// the two triggers show up as 4 and 5
+			if (axis[4] != xb360d->lt) {
+				axis[4] = xb360d->lt;
+				axis_changed_mask_ |= (1 << 4);
+				anychange = true;
+			}
+
+			if (axis[5] != xb360d->rt) {
+				axis[5] = xb360d->rt;
+				axis_changed_mask_ |= (1 << 5);
+				anychange = true;
+			}
+
+			if (anychange) joystickEvent = true;
+		}
+	} else if (joystickType_ == XBOX360_WIRED){
+		uint8_t *rx_buf = (uint8_t *)transfer->buffer;
+
+		if (rx_buf[0] == 0x03 && rx_buf[1] == 0x03){
+			DBGPrintf("Xbox 360 Wired: Rumble Status %02x\r\n", rx_buf[2]);
+			setRumble(0,0,0);
+		}
+		else if (rx_buf[0] == 0x01 && rx_buf[1] == 0x03){
+			DBGPrintf("Xbox 360 Wired: Led Status %02x\r\n", rx_buf[2]);
+			if(rx_buf[2]==0x0E){ //0X0E invalid LED (normally when you first connect)
+				setLEDs(0);
+				setLEDs(2); //FIXME Hardcoded to 1st led quadrant
+			}
+		}
+		else if (rx_buf[0] == 0x00 && rx_buf[1] == 0x14){
+			xbox360wireddata_t  *xb360d = (xbox360wireddata_t *)transfer->buffer;
+			if (buttons != xb360d->buttons) {
+				buttons = xb360d->buttons;
+				anychange = true;
+			}
+			axis_mask_ = 0x3f;
 			axis_changed_mask_ = 0;	// assume none for now
 
 			for (uint8_t i = 0; i < 4; i++) {
