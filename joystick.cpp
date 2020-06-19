@@ -197,7 +197,7 @@ bool JoystickController::setLEDs(uint8_t lr, uint8_t lg, uint8_t lb)
 			    // ...
 				txbuf_[1] = 0x00;
 				txbuf_[2] = 0x08;
-				txbuf_[3] = 0x40 + lr;
+				txbuf_[3] = 0x40 + lb;
 				txbuf_[4] = 0x00;
 				txbuf_[5] = 0x00;
 				txbuf_[6] = 0x00;
@@ -677,10 +677,12 @@ void JoystickController::rx_data(const Transfer_t *transfer)
 				if (connected_) {
 					println("XBox360w - Connected type:", connected_, HEX);
 					// rx_ep_ should be 1, 3, 5, 7 for the wireless convert to 2-5 on led
-					setLEDs(2+rx_ep_/2);	// Right now hard coded to first joystick...
+					setLEDs(0);
+					setLEDs(2 + (rx_ep_ & 15) / 2);
 
 				} else {
 					println("XBox360w - disconnected");
+					setLEDs(0);
 				}
 			}
 		} else if((xb360d->id_or_type == 0x00) && (xb360d->controller_status & 0x1300)) {
