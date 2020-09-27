@@ -41,6 +41,7 @@ JoystickController::product_vendor_mapping_t JoystickController::pid_vid_mapping
 	//Wired Xbox One Controllers
 	{ 0x045e, 0x02ea, XBOXONE, false },
 	{ 0x045e, 0x02dd, XBOXONE, false },
+	{ 0x2E24, 0x0652, XBOXONE, false }, //Hyperkin Duke
 
 	//Wireless Xbox 360 Receivers
 	{ 0x045e, 0x0719, XBOX360, false}, //Official USB receiver
