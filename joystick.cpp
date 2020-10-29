@@ -39,10 +39,22 @@
 // doing other features.  
 JoystickController::product_vendor_mapping_t JoystickController::pid_vid_mapping[] = {
 	//Wired Xbox One Controllers
-	{ 0x045e, 0x02ea, XBOXONE, false },
-	{ 0x045e, 0x02dd, XBOXONE, false },
+	{ 0x045e, 0x02ea, XBOXONE, false }, //Microsoft S pad
+	{ 0x045e, 0x02dd, XBOXONE, false }, //Microsoft Old Firmware
+	{ 0x045e, 0x02d1, XBOXONE, false }, //Microsoft XBONE pad
+	{ 0x045e, 0x02e3, XBOXONE, false }, //Microsfot XBONE Elite
 	{ 0x2E24, 0x0652, XBOXONE, false }, //Hyperkin Duke
 	{ 0x2E24, 0x1618, XBOXONE, false }, //Hyperkin Duke v1.01
+	{ 0x0E6f, 0x02A7, XBOXONE, false }, //PDP Raven Black
+	{ 0x0E6f, 0x013a, XBOXONE, false }, //PDP XBONE
+	{ 0x0E6f, 0x0161, XBOXONE, false }, //PDP XBONE
+	{ 0x0E6f, 0x0162, XBOXONE, false }, //PDP XBONE
+	{ 0x0E6f, 0x0163, XBOXONE, false }, //PDP XBONE
+	{ 0x0E6f, 0x02a0, XBOXONE, false }, //PDP XBONE
+	{ 0x0E6f, 0x0163, XBOXONE, false }, //PDP XBONE
+	{ 0x0E6f, 0x02a1, XBOXONE, false }, //PDP XBONE
+	{ 0x0E6f, 0x02a7, XBOXONE, false }, //PDP XBONE
+	{ 0x0E6f, 0x02a8, XBOXONE, false }, //PDP XBONE
 
 	//Wireless Xbox 360 Receivers
 	{ 0x045e, 0x0719, XBOX360, false}, //Official USB receiver
@@ -576,6 +588,10 @@ void JoystickController::joystickDataClear() {
 //*****************************************************************************
 
 static  uint8_t xboxone_start_input[] = {0x05, 0x20, 0x00, 0x01, 0x00};
+static  uint8_t xboxone_s_init[] = {0x05, 0x20, 0x00, 0x0f, 0x06};
+static  uint8_t xboxone_pdp_init1[] = {0x0a, 0x20, 0x00, 0x03, 0x00, 0x01, 0x14};
+static  uint8_t xboxone_pdp_init2[] = {0x06, 0x30};
+static  uint8_t xboxone_pdp_init3[] = {0x06, 0x20, 0x00, 0x02, 0x01, 0x00};
 static  uint8_t xbox360w_inquire_present[] = {0x08, 0x00, 0x0F, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descriptors, uint32_t len)
@@ -668,6 +684,18 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 	joystickType_ = jtype;
 	if (jtype == XBOXONE) {
 		queue_Data_Transfer(txpipe_, xboxone_start_input, sizeof(xboxone_start_input), this);
+
+		//Init packet for XBONE S/Elite controllers (return from bluetooth mode)
+		if (dev->idVendor == 0x045e && (dev->idProduct == 0x02ea || dev->idProduct == 0x0b00))
+			queue_Data_Transfer(txpipe_, xboxone_s_init, sizeof(xboxone_s_init), this);
+
+		//Required for PDP aftermarket controllers
+		if (dev->idVendor == 0x0e6f)
+		{
+			queue_Data_Transfer(txpipe_, xboxone_pdp_init1, sizeof(xboxone_pdp_init1), this);
+			queue_Data_Transfer(txpipe_, xboxone_pdp_init2, sizeof(xboxone_pdp_init2), this);
+			queue_Data_Transfer(txpipe_, xboxone_pdp_init3, sizeof(xboxone_pdp_init3), this);
+		}
 		connected_ = true;		// remember that hardware is actually connected...
 	} else if (jtype == XBOX360) {
 		queue_Data_Transfer(txpipe_, xbox360w_inquire_present, sizeof(xbox360w_inquire_present), this);
