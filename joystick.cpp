@@ -186,6 +186,19 @@ bool JoystickController::setRumble(uint8_t lValue, uint8_t rValue, uint8_t timeo
 				println("XBox360 wired rumble transfer fail");
 			}
 			return true;
+		case XBOXDUKE:
+
+			txbuf_[0] = 0x00;
+			txbuf_[1] = 0x06;
+			txbuf_[2] = lValue;
+			txbuf_[3] = lValue;
+			txbuf_[4] = rValue;
+			txbuf_[5] = rValue;
+
+			if (!queue_Data_Transfer(txpipe_, txbuf_, 6, this)) {
+				println("XBox duke rumble transfer fail");
+			}
+			return true;
 	} 
 	return false;
 }
@@ -236,6 +249,7 @@ bool JoystickController::setLEDs(uint8_t lr, uint8_t lg, uint8_t lb)
 				}
 				return true;
 			case XBOXONE:
+			case XBOXDUKE:
 			default:
 				return false;
 		} 
@@ -535,8 +549,6 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 
 	// Some common stuff for both XBoxs
 	uint32_t count_end_points = descriptors[4];
-	//Vendor Specific only
-	if (descriptors[5] != 0xff) return false;
 
 	//Must have atleast 2 endpoints
 	if (count_end_points < 2) return false;
@@ -555,6 +567,10 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 	    descriptors[15] == 0x04 && //bInterval should be 4 (Need this check for SX controller)
 	    descriptors[22] == 0x04)   //bInterval should be 4 (Need this check for SX controller)
 		jtype = XBOXONE;
+
+	if (descriptors[5] == 0x58 &&  //Xbox Duke bInterfaceClass
+	    descriptors[6] == 0x42)    //Xbox Duke bInterfaceSubClass
+		jtype = XBOXDUKE;
 
 	println("Jtype=", (uint8_t)jtype, DEC);
 
@@ -634,7 +650,11 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 		connected_ = true;
 		setLEDs(0);
 		setLEDs(2); //FIXME Hardcoded to 1st led quadrant
+
+	} else if (jtype == XBOXDUKE) {
+		connected_ = true;
 	}
+
 	memset(axis, 0, sizeof(axis));	// clear out any data. 
 	DBGPrintf("   JoystickController::claim joystickType_ %d\n", joystickType_);
 	JoystickPeriodicTimer.start(2000000);
@@ -733,6 +753,24 @@ typedef struct {
 	uint8_t rt;
 	int16_t	axis[4]; //lx, ly, rx, ry
 } xbox360wireddata_t;
+
+typedef struct {
+	uint8_t type;
+	uint8_t length;
+	//starting from the LSB: dup,ddown,dleft,dright,start,back,ls,rs
+	uint8_t dbuttons;
+	uint8_t unused;
+	uint8_t a;
+	uint8_t b;
+	uint8_t x;
+	uint8_t y;
+	uint8_t black;
+	uint8_t white;
+	uint8_t lt;
+	uint8_t rt;
+	int16_t	axis[4]; //lx, ly, rx, ry
+} xboxdukedata_t;
+
 
 static const uint8_t xbox_axis_order_mapping[] = {3, 4, 0, 1, 2, 5};
 
@@ -922,6 +960,43 @@ void JoystickController::rx_data(const Transfer_t *transfer)
 			}
 
 			if (anychange) joystickEvent = true;
+		}
+	} else if (joystickType_ == XBOXDUKE){
+
+		uint8_t *rx_buf = (uint8_t *)transfer->buffer;
+		if (rx_buf[0] == 0x00 && rx_buf[1] == 0x14){
+			//Update digital buttons
+			xboxdukedata_t *duked = (xboxdukedata_t *)transfer->buffer;
+			if (buttons != duked->dbuttons) {
+				buttons = duked->dbuttons;
+				anychange = true;
+			}
+
+			//Update analog axis'
+			axis_mask_ = 0x3f;
+			axis_changed_mask_ = 0;	// assume none for now
+
+			// Handle analog inputs (a,b,x,y,black,white,lt,rt)
+			for (uint8_t i = 0; i < 8; i++) {
+				if (axis[i] != rx_buf[i + 4]) {
+					axis[i] = rx_buf[i + 4];
+					axis_changed_mask_ |= (1 << i);
+				}
+			}
+
+			//Handle stick axis
+			for (uint8_t i = 8; i < 12; i++) {
+				if (axis[i] != duked->axis[i - 8]) {
+					axis[i]  = duked->axis[i - 8];
+					axis_changed_mask_ |= (1 << i);
+				}
+			}
+
+			if (axis_changed_mask_)
+				anychange = true;
+
+			if (anychange)
+				joystickEvent = true;
 		}
 	}
 
