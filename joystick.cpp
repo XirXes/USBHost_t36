@@ -1011,6 +1011,7 @@ void JoystickController::disconnect()
 {
 	axis_mask_ = 0;	
 	axis_changed_mask_ = 0;
+	JoystickPeriodicTimer.stop();
 	// TODO: free resources
 }
 
