@@ -652,7 +652,7 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 	} else if (jtype == XBOX360_WIRED) {
 		connected_ = true;
 		setLEDs(0);
-		setLEDs(2); //FIXME Hardcoded to 1st led quadrant
+		//setLEDs(2); //FIXME Hardcoded to 1st led quadrant
 
 	} else if (jtype == XBOXDUKE) {
 		connected_ = true;
@@ -929,8 +929,8 @@ void JoystickController::rx_data(const Transfer_t *transfer)
 		else if (rx_buf[0] == 0x01 && rx_buf[1] == 0x03){
 			DBGPrintf("Xbox 360 Wired: Led Status %02x\r\n", rx_buf[2]);
 			if(rx_buf[2]==0x0E){ //0X0E invalid LED (normally when you first connect)
-				setLEDs(0);
-				setLEDs(2); //FIXME Hardcoded to 1st led quadrant
+				//setLEDs(0);
+				//setLEDs(2); //FIXME Hardcoded to 1st led quadrant
 			}
 		}
 		else if (rx_buf[0] == 0x00 && rx_buf[1] == 0x14){
