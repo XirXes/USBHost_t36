@@ -38,18 +38,15 @@
 // The others are used after claim-hid code to know which one we have and to use it for 
 // doing other features.  
 JoystickController::product_vendor_mapping_t JoystickController::pid_vid_mapping[] = {
-	//PS3 Controllers
-	{ 0x054C, 0x0268, PS3, true},
-	{ 0x054C, 0x042F, PS3, true}, // PS3 Navigation controller
-	{ 0x054C, 0x03D5, PS3_MOTION, true}, // PS3 Motion controller
-
-	//PS4 Controllers
-	{ 0x054C, 0x05C4, PS4, true},
-	{ 0x054C, 0x09CC, PS4, true },
-
-	//Other
-	{ 0x046D, 0xC626, SpaceNav, true}, // 3d Connextion Space Navigator, 0x10008
-	{ 0x046D, 0xC628, SpaceNav, true}, // 3d Connextion Space Navigator, 0x10008
+	{ 0x045e, 0x02ea, XBOXONE, false },{ 0x045e, 0x02dd, XBOXONE, false },
+	{ 0x045e, 0x0719, XBOX360, false},
+	{ 0x045e, 0x028E, SWITCH, false},  // Switch? 
+	{ 0x054C, 0x0268, PS3, true}, 
+	{ 0x054C, 0x042F, PS3, true},	// PS3 Navigation controller
+	{ 0x054C, 0x03D5, PS3_MOTION, true},	// PS3 Motion controller
+	{ 0x054C, 0x05C4, PS4, true}, 	{0x054C, 0x09CC, PS4, true },
+	{ 0x046D, 0xC626, SpaceNav, true},  // 3d Connextion Space Navigator, 0x10008
+	{ 0x046D, 0xC628, SpaceNav, true}  // 3d Connextion Space Navigator, 0x10008
 };
 
 
@@ -119,6 +116,8 @@ const uint8_t *JoystickController::serialNumber()
 	return nullptr;
 }
 
+
+static uint8_t rumble_counter = 0; 
 
 bool JoystickController::setRumble(uint8_t lValue, uint8_t rValue, uint8_t timeout)
 {
@@ -197,6 +196,36 @@ bool JoystickController::setRumble(uint8_t lValue, uint8_t rValue, uint8_t timeo
 
 			if (!queue_Data_Transfer(txpipe_, txbuf_, 6, this)) {
 				println("XBox duke rumble transfer fail");
+		case SWITCH:
+			memset(txbuf_, 0, 10);	// make sure it is cleared out
+			txbuf_[0] = 0x80;
+			txbuf_[1] = 0x92;
+			txbuf_[3] = 0x31;
+			txbuf_[8] = 0x10;	// Command
+
+			// Now add in subcommand data:
+			// Probably do this better soon
+			txbuf_[9+0] = rumble_counter++;	//
+			txbuf_[9+1] = 0x80;
+    		txbuf_[9+2] = 0x00;
+    		txbuf_[9+3] = 0x40;
+    		txbuf_[9+4] = 0x40;
+    		txbuf_[9+5] = 0x80;
+    		txbuf_[9+6] = 0x00;
+    		txbuf_[9+7] = 0x40;
+    		txbuf_[9+8] = 0x40;
+
+    		if (lValue != 0) {
+	    		txbuf_[9+5] = 0x08;
+	    		txbuf_[9+6] = lValue;
+    		} else if (rValue != 0) {
+	    		txbuf_[9+5] = 0x10;
+	    		txbuf_[9+6] = rValue;
+    		}
+
+			if (!queue_Data_Transfer(txpipe_, txbuf_, 18, this)) {
+				println("switch rumble transfer fail");
+				Serial.printf("Switch Rumble transfer fail\n");
 			}
 			return true;
 	} 
@@ -208,6 +237,7 @@ bool JoystickController::setLEDs(uint8_t lr, uint8_t lg, uint8_t lb)
 {
 	// Need to know which joystick we are on.  Start off with XBox support - maybe need to add some enum value for the known
 	// joystick types. 
+	Serial.printf("::setLEDS(%x %x %x)\n", lr, lg, lb);
 	if ((leds_[0] != lr) || (leds_[1] != lg) || (leds_[2] != lb)) {
 		leds_[0] = lr;
 		leds_[1] = lg;
@@ -248,6 +278,32 @@ bool JoystickController::setLEDs(uint8_t lr, uint8_t lg, uint8_t lb)
 					println("XBox360 wired set leds fail");
 				}
 				return true;
+			case SWITCH:
+				memset(txbuf_, 0, 10);	// make sure it is cleared out
+				txbuf_[0] = 0x80;
+				txbuf_[1] = 0x92;
+				txbuf_[3] = 0x31;
+				txbuf_[8] = 0x01;	// Command
+
+				// Now add in subcommand data:
+				// Probably do this better soon
+				txbuf_[9+0] = rumble_counter++;	//
+				txbuf_[9+1] = 0x00;
+        		txbuf_[9+2] = 0x01;
+        		txbuf_[9+3] = 0x40;
+        		txbuf_[9+4] = 0x40;
+        		txbuf_[9+5] = 0x00;
+        		txbuf_[9+6] = 0x01;
+        		txbuf_[9+7] = 0x40;
+        		txbuf_[9+8] = 0x40;
+
+        		txbuf_[9+9] = 0x30;	// LED Command
+        		txbuf_[9+10] = lr;
+       			println("Switch set leds: driver? ", (uint32_t)driver_, HEX);
+				print_hexbytes((uint8_t*)txbuf_, 20);
+				if (!queue_Data_Transfer(txpipe_, txbuf_, 20, this)) {
+					println("switch set leds fail");
+				}
 			case XBOXONE:
 			case XBOXDUKE:
 			default:
@@ -255,13 +311,6 @@ bool JoystickController::setLEDs(uint8_t lr, uint8_t lg, uint8_t lb)
 		} 
 	}
 	return false;
-}
-
-bool JoystickController::sendRaw(uint8_t *data, uint8_t len) {
-	if (len < sizeof(txbuf_))
-		memcpy(txbuf_, data, len);
-
-	return queue_Data_Transfer(txpipe_, data, len, this);
 }
 
 bool JoystickController::transmitPS4UserFeedbackMsg() {
@@ -504,6 +553,32 @@ bool JoystickController::hid_process_out_data(const Transfer_t *transfer)
 	return true;
 }
 
+bool JoystickController::hid_process_in_data(const Transfer_t *transfer)
+{
+	uint8_t *pb = (uint8_t *)transfer->buffer;
+	if (!transfer->buffer || *pb == 1) return false; // don't do report 1
+	Serial.printf("hid_process_in_data %x %u:", transfer->buffer, transfer->length);
+	uint8_t cnt = transfer->length;
+	if (cnt > 16) cnt = 16;
+	while(cnt--) Serial.printf(" %02x", *pb++);
+	Serial.printf("\n");
+
+	return false;
+}
+
+bool JoystickController::hid_process_control(const Transfer_t *transfer) {
+	Serial.printf("USBHIDParser::control msg: %x %x : %x %u :", transfer->setup.word1, transfer->setup.word2, transfer->buffer, transfer->length);
+	if (transfer->buffer) {
+		uint16_t cnt = transfer->length;
+		if (cnt > 16) cnt = 16;
+		uint8_t *pb = (uint8_t*)transfer->buffer;
+		while (cnt--) Serial.printf(" %02x", *pb++);
+	}
+	Serial.printf("\n");
+	send_Control_packet_active_ = false;
+	return false;
+}
+
 void JoystickController::joystickDataClear() {
 	joystickEvent = false;
 	anychange = false;
@@ -521,14 +596,17 @@ static  uint8_t xboxone_s_init[] = {0x05, 0x20, 0x00, 0x0f, 0x06};
 static  uint8_t xboxone_pdp_init1[] = {0x0a, 0x20, 0x00, 0x03, 0x00, 0x01, 0x14};
 static  uint8_t xboxone_pdp_init2[] = {0x06, 0x30};
 static  uint8_t xboxone_pdp_init3[] = {0x06, 0x20, 0x00, 0x02, 0x01, 0x00};
-static  uint8_t xbox360w_inquire_present[] = {0x08, 0x00, 0x0F, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 //Xbox360 Wireless Commands
-static uint8_t xbox360w_connection_refresh[] = {0x08, 0x00, 0x00, 0x00};
-static uint8_t xbox360w_controller_info[] = {0x00, 0x00, 0x00, 0x40};
-static uint8_t xbox360w_chatpad_init[] = {0x00, 0x00, 0x0C, 0x1B};
-static uint8_t xbox360w_chatpad_keepalive1[] = {0x00, 0x00, 0x0C, 0x1F};
-static uint8_t xbox360w_chatpad_keepalive2[] = {0x00, 0x00, 0x0C, 0x1E};
+static  uint8_t xbox360w_inquire_present[] = {0x08, 0x00, 0x0F, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static  uint8_t xbox360w_connection_refresh[] = {0x08, 0x00, 0x00, 0x00};
+static  uint8_t xbox360w_controller_info[] = {0x00, 0x00, 0x00, 0x40};
+static  uint8_t xbox360w_chatpad_init[] = {0x00, 0x00, 0x0C, 0x1B};
+static  uint8_t xbox360w_chatpad_keepalive1[] = {0x00, 0x00, 0x0C, 0x1F};
+static  uint8_t xbox360w_chatpad_keepalive2[] = {0x00, 0x00, 0x0C, 0x1E};
+
+//static  uint8_t switch_start_input[] = {0x19, 0x01, 0x03, 0x07, 0x00, 0x00, 0x92, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10};
+static  uint8_t switch_start_input[] = {0x80, 0x02};
 
 bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descriptors, uint32_t len)
 {
@@ -544,6 +622,14 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 
 	// Check PID/VID lookup table. Still used for PS controllers.
 	JoystickController::joytype_t jtype = mapVIDPIDtoJoystickType(dev->idVendor, dev->idProduct, true);
+
+	// Switch
+	// 09 04 00 00 02 FF 5D 01 00 
+	// 10 21 10 01 01 24 81 14 03 00 03 13 02 00 03 00 
+	// 07 05 81 03 20 00 08 
+	// 07 05 02 03 20 00 08 
+
+
 
 	if (len < 9+7+7) return false;
 
@@ -585,32 +671,32 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 	tx_size_ = 0;
 	uint32_t descriptor_index = 9; 
 
-	//Skip non endpoint descriptors
-	if (descriptors[descriptor_index + 1] != 0x05)  {
-		descriptor_index += descriptors[descriptor_index];
-	}
+	if (descriptors[descriptor_index+1] == 0x22)  {
+		if (descriptors[descriptor_index] != 0x14) return false; // only support specific versions...
+		descriptor_index += descriptors[descriptor_index]; // XBox360w ignore this unknown setup...
+	}	
+	while ((rx_ep_ == 0) || txep == 0) {
+		print("  Index:", descriptor_index, DEC);
 
-	while (count_end_points-- && ((rx_ep_ == 0) || txep == 0)) {
-		if (descriptors[descriptor_index] != 7) return false; // length 7
-		if (descriptors[descriptor_index+1] != 5) return false; // ep desc
-		if ((descriptors[descriptor_index+3] == 3) 				// Type 3...
-			&& (descriptors[descriptor_index+4] <= 64)
-			&& (descriptors[descriptor_index+5] == 0)) {
-			// have a bulk EP size 
-			if (descriptors[descriptor_index+2] & 0x80 ) {
-				rx_ep_ = descriptors[descriptor_index+2];
-				rx_size_ = descriptors[descriptor_index+4];
-				if (jtype == XBOX360)
-					rx_interval = descriptors[descriptor_index+6] * 8;
-				else
+		if (descriptor_index >= len) return false;  		// we ran off the end and did not get end points
+		// see if the next data is an end point descript
+		if ((descriptors[descriptor_index] == 7) && (descriptors[descriptor_index+1] == 5)) {
+			if ((descriptors[descriptor_index+3] == 3) 				// Type 3...
+				&& (descriptors[descriptor_index+4] <= 64)
+				&& (descriptors[descriptor_index+5] == 0)) {
+				// have a bulk EP size 
+				if (descriptors[descriptor_index+2] & 0x80 ) {
+					rx_ep_ = descriptors[descriptor_index+2];
+					rx_size_ = descriptors[descriptor_index+4];
 					rx_interval = descriptors[descriptor_index+6];
-			} else {
-				txep = descriptors[descriptor_index+2]; 
-				tx_size_ = descriptors[descriptor_index+4];
-				tx_interval = descriptors[descriptor_index+6];
+				} else {
+					txep = descriptors[descriptor_index+2]; 
+					tx_size_ = descriptors[descriptor_index+4];
+					tx_interval = descriptors[descriptor_index+6];
+				}
 			}
 		}
-		descriptor_index += 7;  // setup to look at next one...
+		descriptor_index += descriptors[descriptor_index];  // setup to look at next one...
 	}
 	if ((rx_ep_ == 0) || (txep == 0)) return false; // did not find two end points.
 	print("JoystickController, rx_ep_=", rx_ep_ & 15);
@@ -648,14 +734,15 @@ bool JoystickController::claim(Device_t *dev, int type, const uint8_t *descripto
 	} else if (jtype == XBOX360) {
 		queue_Data_Transfer(txpipe_, xbox360w_inquire_present, sizeof(xbox360w_inquire_present), this);
 		connected_ = 0;		// remember that hardware is actually connected...
-
-	} else if (jtype == XBOX360_WIRED) {
+    } else if (jtype == XBOX360_WIRED) {
 		connected_ = true;
 		setLEDs(0);
 		//setLEDs(2); //FIXME Hardcoded to 1st led quadrant
-
 	} else if (jtype == XBOXDUKE) {
 		connected_ = true;
+	} else if (jtype == SWITCH) {
+		queue_Data_Transfer(txpipe_, switch_start_input, sizeof(switch_start_input), this);
+		connected_ = true;		// remember that hardware is actually connected...
 	}
 
 	memset(axis, 0, sizeof(axis));	// clear out any data. 
@@ -774,6 +861,22 @@ typedef struct {
 	int16_t	axis[4]; //lx, ly, rx, ry
 } xboxdukedata_t;
 
+typedef struct {
+	uint8_t state;
+	uint8_t id_or_type;
+	// From online references button order: 
+	//     sync, dummy, start, back, a, b, x, y
+	//     dpad up, down left, right
+	//	   lb, rb, left stick, right stick
+	// Axis: 
+	//     lt, rt, lx, ly, rx, ry
+	//
+	uint8_t buttons_h; 
+	uint8_t buttons_l; 
+	uint8_t lt;
+	uint8_t rt;
+	int16_t	axis[4];
+} switchdataUSB_t;
 
 static const uint8_t xbox_axis_order_mapping[] = {3, 4, 0, 1, 2, 5};
 
@@ -782,6 +885,12 @@ void JoystickController::rx_data(const Transfer_t *transfer)
 	uint8_t *raw_buffer = (uint8_t *)transfer->buffer;
 	//print_hexbytes(raw_buffer, transfer->length);
 	
+	#ifdef  DEBUG_JOYSTICK
+	print("JoystickController::rx_data (", joystickType_, DEC);
+	print("): ");
+	print_hexbytes((uint8_t*)transfer->buffer, transfer->length);
+	#endif
+
 	if (joystickType_ == XBOXONE) {
 		// Process XBOX One data
 		axis_mask_ = 0x3f;	
@@ -1001,6 +1110,37 @@ void JoystickController::rx_data(const Transfer_t *transfer)
 			if (anychange)
 				joystickEvent = true;
 		}
+	} else if (joystickType_ == SWITCH) {
+		switchdataUSB_t  *switchd = (switchdataUSB_t *)transfer->buffer;
+		uint16_t cur_buttons = (switchd->buttons_h << 8) | switchd->buttons_l;
+        if (buttons != cur_buttons) {
+        	buttons = cur_buttons;
+        	anychange = true;
+        }
+		axis_mask_ = 0x3f;	
+		axis_changed_mask_ = 0;	// assume none for now
+
+		for (uint8_t i = 0; i < 4; i++) {
+			if (axis[i] != switchd->axis[i]) {
+				axis[i] = switchd->axis[i];
+				axis_changed_mask_ |= (1 << i);
+				anychange = true;
+			}
+		}
+		// the two triggers show up as 4 and 5
+		if (axis[4] != switchd->lt) {
+			axis[4] = switchd->lt;
+			axis_changed_mask_ |= (1 << 4);
+			anychange = true;
+		}
+
+		if (axis[5] != switchd->rt) {
+			axis[5] = switchd->rt;
+			axis_changed_mask_ |= (1 << 5);
+			anychange = true;
+		}
+
+		if (anychange) joystickEvent = true;
 	}
 
 	queue_Data_Transfer(rxpipe_, rxbuf_, rx_size_, this);
@@ -1020,6 +1160,11 @@ void JoystickController::disconnect()
 
 bool JoystickController::claim_bluetooth(BluetoothController *driver, uint32_t bluetooth_class, uint8_t *remoteName) 
 {
+	// If we are already in use than don't grab another one.  Likewise don't grab if it is used as USB or HID object
+	if (btdevice && (btdevice != (Device_t*)driver)) return false;
+	if (mydevice != NULL) return false;
+	if (device != nullptr) return false;
+
 	if ((((bluetooth_class & 0xff00) == 0x2500) || (((bluetooth_class & 0xff00) == 0x500))) && ((bluetooth_class & 0x3C) == 0x08)) {
 		DBGPrintf("JoystickController::claim_bluetooth TRUE\n");
 		btdriver_ = driver;
@@ -1190,9 +1335,15 @@ bool JoystickController::process_bluetooth_HID_data(const uint8_t *data, uint16_
 		//set buttons for last 4bits in the axis[5]
 		tmp_data[5] = tmp_data[5] >> 4;
 		
-	
+		// Lets try mapping the DPAD buttons to high bits 
+		//								              up    up/right  right    R DN      DOWN    L DN      Left    LUP
+		static const uint32_t dpad_to_buttons[] = {0x10000, 0x30000, 0x20000, 0x60000, 0x40000, 0xC0000, 0x80000, 0x90000};
+		
 		// Quick and dirty hack to match PS4 HID data
-		uint32_t cur_buttons = tmp_data[7] | (tmp_data[10]) | ((tmp_data[6]*10)) | ((uint16_t)tmp_data[5] << 16) ; 
+		uint32_t cur_buttons = ((uint32_t)tmp_data[7] << 12) | (((uint32_t)tmp_data[6]*0x10)) | ((uint16_t)tmp_data[5] ) ;
+
+		if (tmp_data[10] < 8) cur_buttons |= dpad_to_buttons[tmp_data[10]];
+
 		if (cur_buttons != buttons) {
 			buttons = cur_buttons;
 			joystickEvent = true;	// something changed.
@@ -1355,3 +1506,35 @@ bool JoystickController::PS3Pair(uint8_t* bdaddr) {
 	}
 	return false;
 }
+
+//=============================================================================
+// Retrieve the current pairing information for a PS4...
+//=============================================================================
+bool JoystickController::PS4GetCurrentPairing(uint8_t* bdaddr) {
+	if (!driver_ || (joystickType_ != PS4)) return false;
+	// Try asking PS4 for information
+	memset(txbuf_, 0, 0x10);
+	send_Control_packet_active_ = true;
+	if (!driver_->sendControlPacket(0xA1, 1, 0x312, 0, 0x10, txbuf_)) 
+		return false;
+	elapsedMillis em = 0;
+	while ((em < 500) && send_Control_packet_active_) ;
+	memcpy(bdaddr, &txbuf_[10], 6);
+	return true;
+}
+
+bool JoystickController::PS4Pair(uint8_t* bdaddr) {
+	if (!driver_ || (joystickType_ != PS4)) return false;
+	// Lets try to setup a message to send... 
+	static const uint8_t ps4_pair_msg[] PROGMEM = {0x13, 0xff, 0xff, 0xff,0xff, 0xff, 0xff, 
+			0x56, 0xE8, 0x81, 0x38, 0x08, 0x06, 0x51, 0x41, 0xC0, 0x7F, 0x12, 0xAA, 0xD9, 0x66, 0x3C, 0xCE};
+
+	// Note the above 0xff sare place holders for the bdaddr
+	memcpy(txbuf_, ps4_pair_msg, sizeof(ps4_pair_msg));
+	for(uint8_t i = 0; i < 6; i++)
+            txbuf_[i + 1] = bdaddr[i]; 
+
+	send_Control_packet_active_ = true;
+	return driver_->sendControlPacket(0x21, 0x09, 0x0313, 0, sizeof(ps4_pair_msg), txbuf_);
+}
+
